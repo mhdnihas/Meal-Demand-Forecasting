@@ -1,3 +1,0 @@
-Model,MAE,MSE,R2_score,parameters
-SVR,125.0443728487168,24346.502352298256,0.5097339180080351,"{'C': 10, 'cache_size': 200, 'coef0': 0.0, 'degree': 3, 'epsilon': 0.1, 'gamma': 'scale', 'kernel': 'rbf', 'max_iter': -1, 'shrinking': True, 'tol': 0.001, 'verbose': False}"
-decision_tree,148.39918092026016,32184.113466634542,0.3519077613962783,"[{'ccp_alpha': 0.0, 'criterion': 'absolute_error', 'max_depth': 10, 'max_features': None, 'max_leaf_nodes': None, 'min_impurity_decrease': 0.0, 'min_samples_leaf': 4, 'min_samples_split': 5, 'min_weight_fraction_leaf': 0.0, 'random_state': None, 'splitter': 'best'}]"
