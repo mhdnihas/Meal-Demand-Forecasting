@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 # Sample data provided by the user
 meal_category_mapping = {
@@ -60,6 +61,11 @@ if st.session_state.interface == 'User':
 elif st.session_state.interface == 'Client':
     st.title("Food Forecasting System - Client Interface")
     st.sidebar.title("Client Options")
+
+    # Embed Tableau Public dashboard
+    st.write("Dashboard:")
+    tableau_url = "https://public.tableau.com/shared/YXGCKBZPD?:display_count=n&:origin=viz_share_link"  # Replace with your actual Tableau Public URL
+    components.iframe(tableau_url, height=600)  # Adjust height as needed
 
     st.write("Please input the required details:")
 
