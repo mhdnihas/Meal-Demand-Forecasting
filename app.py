@@ -1,33 +1,412 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+import joblib
+from tensorflow.keras.models import load_model
+import json
 
-# Sample data provided by the user
-meal_category_mapping = {
-    'Sandwich': [1971, 1754, 2826],
-    'Beverages': [1248, 1230, 2539, 1993, 1207, 2631, 1778, 1062, 1885, 2322, 2707, 2139],
-    'Biryani': [1902, 1247, 1770],
-    'Pizza': [2581, 1558, 1962],
-    'Pasta': [1216, 2306, 2126],
-    'Desert': [2492, 2304, 1543],
-    'Seafood': [1445, 2867, 2444],
-    'Starters': [2577, 2640, 1878],
-    'Rice Bowl': [2290, 1727, 1109],
-    'Other Snacks': [2704, 2760, 1525],
-    'Soup': [2494, 1847, 1438],
-    'Extras': [1803, 1311, 1198],
-    'Salad': [2664, 2569, 2490],
-    'Fish': [2104, 2956, 1571]
+
+
+model=joblib.load('Model/lstmhyperparameter.pkl')
+scaler=joblib.load('Model/scaler2.pkl')
+with open('Model/scaler_params.json', 'r') as file:
+    scaler_params = json.load(file)
+
+scaler_loaded = StandardScaler()
+scaler_loaded.mean_ = np.array(scaler_params['mean'])
+scaler_loaded.var_ = np.array(scaler_params['var'])
+scaler_loaded.scale_ = np.sqrt(scaler_loaded.var_)
+
+
+def predict_orders(features):
+    input_data = np.array(features )
+    
+    input_data_reshaped = input_data.reshape(1, -1)
+
+    
+    scaled_data = scaler_loaded.transform(input_data_reshaped)
+
+    print('scaled data :',scaled_data)
+    prediction = model.predict(scaled_data)
+
+    
+    return prediction
+
+# Reverse the mapping to create a dictionary with meal_id as key and (category, cuisine) as value
+meal_data = {
+    1062: ('Beverages', 'Italian'),
+    1109: ('Rice Bowl', 'Indian'),
+    1198: ('Extras', 'Thai'),
+    1207: ('Beverages', 'Continental'),
+    1216: ('Pasta', 'Italian'),
+    1230: ('Beverages', 'Continental'),
+    1247: ('Biryani', 'Indian'),
+    1248: ('Beverages', 'Indian'),
+    1311: ('Extras', 'Thai'),
+    1438: ('Soup', 'Thai'),
+    1445: ('Seafood', 'Continental'),
+    1525: ('Other Snacks', 'Thai'),
+    1543: ('Desert', 'Indian'),
+    1558: ('Pizza', 'Continental'),
+    1571: ('Fish', 'Continental'),
+    1727: ('Rice Bowl', 'Indian'),
+    1754: ('Sandwich', 'Italian'),
+    1770: ('Biryani', 'Indian'),
+    1778: ('Beverages', 'Italian'),
+    1803: ('Extras', 'Thai'),
+    1847: ('Soup', 'Thai'),
+    1878: ('Starters', 'Thai'),
+    1885: ('Beverages', 'Thai'),
+    1902: ('Biryani', 'Indian'),
+    1962: ('Pizza', 'Continental'),
+    1971: ('Sandwich', 'Italian'),
+    1993: ('Beverages', 'Thai'),
+    2104: ('Fish', 'Continental'),
+    2126: ('Pasta', 'Italian'),
+    2139: ('Beverages', 'Indian'),
+    2290: ('Rice Bowl', 'Indian'),
+    2304: ('Desert', 'Indian'),
+    2306: ('Pasta', 'Italian'),
+    2322: ('Beverages', 'Continental'),
+    2444: ('Seafood', 'Continental'),
+    2490: ('Salad', 'Italian'),
+    2492: ('Desert', 'Indian'),
+    2494: ('Soup', 'Thai'),
+    2539: ('Beverages', 'Thai'),
+    2569: ('Salad', 'Italian'),
+    2577: ('Starters', 'Thai'),
+    2581: ('Pizza', 'Continental'),
+    2631: ('Beverages', 'Indian'),
+    2640: ('Starters', 'Thai'),
+    2664: ('Salad', 'Italian'),
+    2704: ('Other Snacks', 'Thai'),
+    2707: ('Beverages', 'Italian'),
+    2760: ('Other Snacks', 'Thai'),
+    2826: ('Sandwich', 'Italian'),
+    2867: ('Seafood', 'Continental'),
+    2956: ('Fish', 'Continental')
 }
 
-# Reverse the mapping to find category by meal_id
-meal_to_category = {meal_id: category for category, meal_ids in meal_category_mapping.items() for meal_id in meal_ids}
+center_data={10: {'center_type': ['TYPE_B'],
+  'city_code': [590],
+  'region_code': [56],
+  'op_area': [6.3]},
+ 11: {'center_type': ['TYPE_A'],
+  'city_code': [679],
+  'region_code': [56],
+  'op_area': [3.7]},
+ 13: {'center_type': ['TYPE_B'],
+  'city_code': [590],
+  'region_code': [56],
+  'op_area': [6.7]},
+ 14: {'center_type': ['TYPE_C'],
+  'city_code': [654],
+  'region_code': [56],
+  'op_area': [2.7]},
+ 17: {'center_type': ['TYPE_A'],
+  'city_code': [517],
+  'region_code': [56],
+  'op_area': [3.2]},
+ 20: {'center_type': ['TYPE_A'],
+  'city_code': [522],
+  'region_code': [56],
+  'op_area': [4.0]},
+ 23: {'center_type': ['TYPE_A'],
+  'city_code': [698],
+  'region_code': [23],
+  'op_area': [3.4]},
+ 24: {'center_type': ['TYPE_B'],
+  'city_code': [614],
+  'region_code': [85],
+  'op_area': [3.6]},
+ 26: {'center_type': ['TYPE_C'],
+  'city_code': [515],
+  'region_code': [77],
+  'op_area': [3.0]},
+ 27: {'center_type': ['TYPE_A'],
+  'city_code': [713],
+  'region_code': [85],
+  'op_area': [4.5]},
+ 29: {'center_type': ['TYPE_C'],
+  'city_code': [526],
+  'region_code': [34],
+  'op_area': [4.0]},
+ 30: {'center_type': ['TYPE_A'],
+  'city_code': [604],
+  'region_code': [56],
+  'op_area': [3.5]},
+ 32: {'center_type': ['TYPE_A'],
+  'city_code': [526],
+  'region_code': [34],
+  'op_area': [3.8]},
+ 34: {'center_type': ['TYPE_B'],
+  'city_code': [615],
+  'region_code': [34],
+  'op_area': [4.2]},
+ 36: {'center_type': ['TYPE_B'],
+  'city_code': [517],
+  'region_code': [56],
+  'op_area': [4.4]},
+ 39: {'center_type': ['TYPE_C'],
+  'city_code': [526],
+  'region_code': [34],
+  'op_area': [3.8]},
+ 41: {'center_type': ['TYPE_C'],
+  'city_code': [590],
+  'region_code': [56],
+  'op_area': [1.9]},
+ 42: {'center_type': ['TYPE_B'],
+  'city_code': [561],
+  'region_code': [77],
+  'op_area': [3.9]},
+ 43: {'center_type': ['TYPE_A'],
+  'city_code': [590],
+  'region_code': [56],
+  'op_area': [5.1]},
+ 50: {'center_type': ['TYPE_A'],
+  'city_code': [556],
+  'region_code': [77],
+  'op_area': [4.8]},
+ 51: {'center_type': ['TYPE_A'],
+  'city_code': [638],
+  'region_code': [56],
+  'op_area': [7.0]},
+ 52: {'center_type': ['TYPE_B'],
+  'city_code': [685],
+  'region_code': [56],
+  'op_area': [5.6]},
+ 53: {'center_type': ['TYPE_A'],
+  'city_code': [590],
+  'region_code': [56],
+  'op_area': [3.8]},
+ 55: {'center_type': ['TYPE_C'],
+  'city_code': [647],
+  'region_code': [56],
+  'op_area': [2.0]},
+ 57: {'center_type': ['TYPE_C'],
+  'city_code': [541],
+  'region_code': [77],
+  'op_area': [2.8]},
+ 58: {'center_type': ['TYPE_C'],
+  'city_code': [695],
+  'region_code': [77],
+  'op_area': [3.8]},
+ 59: {'center_type': ['TYPE_A'],
+  'city_code': [456],
+  'region_code': [56],
+  'op_area': [4.2]},
+ 61: {'center_type': ['TYPE_A'],
+  'city_code': [473],
+  'region_code': [77],
+  'op_area': [4.5]},
+ 64: {'center_type': ['TYPE_A'],
+  'city_code': [553],
+  'region_code': [77],
+  'op_area': [4.4]},
+ 65: {'center_type': ['TYPE_A'],
+  'city_code': [602],
+  'region_code': [34],
+  'op_area': [4.8]},
+ 66: {'center_type': ['TYPE_A'],
+  'city_code': [648],
+  'region_code': [34],
+  'op_area': [4.1]},
+ 67: {'center_type': ['TYPE_B'],
+  'city_code': [638],
+  'region_code': [56],
+  'op_area': [7.0]},
+ 68: {'center_type': ['TYPE_B'],
+  'city_code': [676],
+  'region_code': [34],
+  'op_area': [4.1]},
+ 72: {'center_type': ['TYPE_C'],
+  'city_code': [638],
+  'region_code': [56],
+  'op_area': [3.9]},
+ 73: {'center_type': ['TYPE_A'],
+  'city_code': [576],
+  'region_code': [34],
+  'op_area': [4.0]},
+ 74: {'center_type': ['TYPE_A'],
+  'city_code': [702],
+  'region_code': [35],
+  'op_area': [2.8]},
+ 75: {'center_type': ['TYPE_B'],
+  'city_code': [651],
+  'region_code': [77],
+  'op_area': [4.7]},
+ 76: {'center_type': ['TYPE_A'],
+  'city_code': [614],
+  'region_code': [85],
+  'op_area': [3.0]},
+ 77: {'center_type': ['TYPE_A'],
+  'city_code': [676],
+  'region_code': [34],
+  'op_area': [3.8]},
+ 80: {'center_type': ['TYPE_C'],
+  'city_code': [604],
+  'region_code': [56],
+  'op_area': [5.1]},
+ 81: {'center_type': ['TYPE_A'],
+  'city_code': [526],
+  'region_code': [34],
+  'op_area': [4.0]},
+ 83: {'center_type': ['TYPE_A'],
+  'city_code': [659],
+  'region_code': [77],
+  'op_area': [5.3]},
+ 86: {'center_type': ['TYPE_C'],
+  'city_code': [699],
+  'region_code': [85],
+  'op_area': [4.0]},
+ 88: {'center_type': ['TYPE_A'],
+  'city_code': [526],
+  'region_code': [34],
+  'op_area': [4.1]},
+ 89: {'center_type': ['TYPE_A'],
+  'city_code': [703],
+  'region_code': [56],
+  'op_area': [4.8]},
+ 91: {'center_type': ['TYPE_C'],
+  'city_code': [590],
+  'region_code': [56],
+  'op_area': [0.9]},
+ 92: {'center_type': ['TYPE_C'],
+  'city_code': [526],
+  'region_code': [34],
+  'op_area': [2.9]},
+ 93: {'center_type': ['TYPE_A'],
+  'city_code': [461],
+  'region_code': [34],
+  'op_area': [3.9]},
+ 94: {'center_type': ['TYPE_C'],
+  'city_code': [632],
+  'region_code': [34],
+  'op_area': [3.6]},
+ 97: {'center_type': ['TYPE_A'],
+  'city_code': [628],
+  'region_code': [77],
+  'op_area': [4.6]},
+ 99: {'center_type': ['TYPE_A'],
+  'city_code': [596],
+  'region_code': [71],
+  'op_area': [4.5]},
+ 101: {'center_type': ['TYPE_C'],
+  'city_code': [699],
+  'region_code': [85],
+  'op_area': [2.8]},
+ 102: {'center_type': ['TYPE_A'],
+  'city_code': [593],
+  'region_code': [77],
+  'op_area': [2.8]},
+ 104: {'center_type': ['TYPE_A'],
+  'city_code': [647],
+  'region_code': [56],
+  'op_area': [4.5]},
+ 106: {'center_type': ['TYPE_A'],
+  'city_code': [675],
+  'region_code': [34],
+  'op_area': [4.0]},
+ 108: {'center_type': ['TYPE_B'],
+  'city_code': [579],
+  'region_code': [56],
+  'op_area': [4.4]},
+ 109: {'center_type': ['TYPE_A'],
+  'city_code': [599],
+  'region_code': [56],
+  'op_area': [3.6]},
+ 110: {'center_type': ['TYPE_A'],
+  'city_code': [485],
+  'region_code': [77],
+  'op_area': [3.8]},
+ 113: {'center_type': ['TYPE_C'],
+  'city_code': [680],
+  'region_code': [77],
+  'op_area': [4.0]},
+ 124: {'center_type': ['TYPE_C'],
+  'city_code': [590],
+  'region_code': [56],
+  'op_area': [4.0]},
+ 126: {'center_type': ['TYPE_A'],
+  'city_code': [577],
+  'region_code': [56],
+  'op_area': [2.7]},
+ 129: {'center_type': ['TYPE_A'],
+  'city_code': [593],
+  'region_code': [77],
+  'op_area': [3.9]},
+ 132: {'center_type': ['TYPE_A'],
+  'city_code': [522],
+  'region_code': [56],
+  'op_area': [3.9]},
+ 137: {'center_type': ['TYPE_A'],
+  'city_code': [590],
+  'region_code': [56],
+  'op_area': [4.4]},
+ 139: {'center_type': ['TYPE_C'],
+  'city_code': [693],
+  'region_code': [34],
+  'op_area': [2.8]},
+ 143: {'center_type': ['TYPE_B'],
+  'city_code': [562],
+  'region_code': [77],
+  'op_area': [3.8]},
+ 145: {'center_type': ['TYPE_A'],
+  'city_code': [620],
+  'region_code': [77],
+  'op_area': [3.9]},
+ 146: {'center_type': ['TYPE_B'],
+  'city_code': [526],
+  'region_code': [34],
+  'op_area': [5.0]},
+ 149: {'center_type': ['TYPE_A'],
+  'city_code': [478],
+  'region_code': [77],
+  'op_area': [2.4]},
+ 152: {'center_type': ['TYPE_B'],
+  'city_code': [576],
+  'region_code': [34],
+  'op_area': [4.0]},
+ 153: {'center_type': ['TYPE_A'],
+  'city_code': [590],
+  'region_code': [56],
+  'op_area': [3.9]},
+ 157: {'center_type': ['TYPE_A'],
+  'city_code': [609],
+  'region_code': [93],
+  'op_area': [4.1]},
+ 161: {'center_type': ['TYPE_B'],
+  'city_code': [658],
+  'region_code': [34],
+  'op_area': [3.9]},
+ 162: {'center_type': ['TYPE_C'],
+  'city_code': [526],
+  'region_code': [34],
+  'op_area': [2.0]},
+ 174: {'center_type': ['TYPE_A'],
+  'city_code': [700],
+  'region_code': [56],
+  'op_area': [7.0]},
+ 177: {'center_type': ['TYPE_A'],
+  'city_code': [683],
+  'region_code': [56],
+  'op_area': [3.4]},
+ 186: {'center_type': ['TYPE_A'],
+  'city_code': [649],
+  'region_code': [34],
+  'op_area': [3.4]}}
 
-# Initialize session state for meal_id and category if not already set
+
+# Initialize session state for meal_id, category, and cuisine if not already set
 if 'selected_meal_id' not in st.session_state:
     st.session_state.selected_meal_id = None
 
 if 'selected_category' not in st.session_state:
     st.session_state.selected_category = None
+
+if 'selected_cuisine' not in st.session_state:
+    st.session_state.selected_cuisine = None
 
 # Set default to user interface if not already set
 if 'interface' not in st.session_state:
@@ -69,47 +448,63 @@ elif st.session_state.interface == 'Client':
 
     st.write("Please input the required details:")
 
-    # Dropdown list for meal_id
-    all_meal_ids = sum(meal_category_mapping.values(), [])
-    meal_id_input = st.selectbox("Select Meal ID", options=all_meal_ids)
+    week = st.number_input("week", step=1, format="%d")+118
 
-    # Automatically set category based on meal_id
-    if meal_id_input:
-        st.session_state.selected_meal_id = meal_id_input
-        st.session_state.selected_category = meal_to_category.get(meal_id_input, None)
 
-    # Display the category
-    category_display = st.text_input("Category", value=st.session_state.selected_category if st.session_state.selected_category else "", disabled=True)
+    # Dropdown list for center_id
+    center_id_input = st.selectbox("Select Center ID", options=list(center_data.keys()))
 
-    # Update meal_id list based on selected category
-    if st.session_state.selected_category:
-        related_meal_ids = meal_category_mapping.get(st.session_state.selected_category, [])
-        st.selectbox("Meal ID in Selected Category", options=related_meal_ids, key='meal_id_in_category')
+    # Automatically display corresponding op_area, center_type, and city_code
+    if center_id_input:
+        op_area=center_data[center_id_input]['op_area'][0]
+        center_type=center_data[center_id_input]['center_type'][0]
+        city_code=center_data[center_id_input]['city_code'][0]
+        region_code=center_data[center_id_input]['region_code'][0]
 
-    # Additional inputs
-    center_id = st.selectbox("Select Center ID", options=[10, 20, 30, 40])  # Example center_ids
-    region_code = st.selectbox("Select Region Code", options=[1, 2, 3, 4])  # Example region_codes
-    home_page = st.selectbox("Home Page Promotion", options=[0, 1])
-    email_promotion = st.selectbox("Email Promotion", options=[0, 1])
-    cusin = st.selectbox("Cuisine", options=["Indian", "Italian", "Chinese", "Mexican"])  # Example cuisines
-    center_type = st.selectbox("Center Type", options=["Type 1", "Type 2", "Type 3"])  # Example center types
-    city_code = st.selectbox("City Code", options=[111, 222, 333, 444])  # Example city_codes
-
-    checkout_price = st.number_input("Checkout Price", min_value=0.0, max_value=1000.0, step=0.01)
-    base_price = st.number_input("Base Price", min_value=0.0, max_value=1000.0, step=0.01)
-    op_area = st.number_input("Operational Area", min_value=0.0, max_value=100.0, step=0.01)
-    
-    # Submit button
-    if st.button("Submit"):
-        st.write(f"Meal ID: {st.session_state.selected_meal_id}")
-        st.write(f"Center ID: {center_id}")
-        st.write(f"Region Code: {region_code}")
-        st.write(f"Home Page Promotion: {home_page}")
-        st.write(f"Email Promotion: {email_promotion}")
-        st.write(f"Category: {st.session_state.selected_category}")
-        st.write(f"Cuisine: {cusin}")
+        st.write(f"Operational Area: {op_area}")
         st.write(f"Center Type: {center_type}")
         st.write(f"City Code: {city_code}")
-        st.write(f"Checkout Price: {checkout_price}")
-        st.write(f"Base Price: {base_price}")
-        st.write(f"Operational Area: {op_area}")
+        st.write(f"Region Code: {region_code}")
+
+    # Dropdown list for meal_id
+    all_meal_ids = list(meal_data.keys())
+    meal_id_input = st.selectbox("Select Meal ID", options=all_meal_ids)
+
+    # Automatically set category and cuisine based on meal_id
+    if meal_id_input:
+        category=meal_data[meal_id_input][0]
+        cusine=meal_data[meal_id_input][1]
+        st.write(f"Category: {category}")
+        st.write(f"Cusine: {cusine}")
+
+   
+    # Additional inputs
+    home_page = st.selectbox("Home Page Promotion", options=[0, 1])
+    email_promotion = st.selectbox("Email Promotion", options=[0, 1])
+    checkout_price = st.number_input("Checkout Price", min_value=0.0, max_value=1000.0, step=0.01)
+    base_price = st.number_input("Base Price", min_value=0.0, max_value=1000.0, step=0.01)
+    
+    #st.write(f"Number of orders: {st.session_state.selected_meal_id}")
+    #week	center_id	meal_id	checkout_price	base_price	emailer_for_promotion	homepage_featured	city_code	region_code	center_type	op_area	category	cuisine
+
+    #label encoding 
+    center_type_encode={'TYPE_A': 0, 'TYPE_B': 1, 'TYPE_C': 2}
+    category_ended={'Beverages': 0, 'Biryani': 1, 'Desert': 2, 'Extras': 3, 'Fish': 4, 'Other Snacks': 5, 'Pasta': 6, 'Pizza': 7, 'Rice Bowl': 8, 'Salad': 9, 'Sandwich': 10, 'Seafood': 11, 'Soup': 12, 'Starters': 13}
+    cusine_encoded={'Continental': 0, 'Indian': 1, 'Italian': 2, 'Thai': 3}
+
+    center_type_numeric=center_type_encode[center_type]
+    category_numeric=category_ended[category]
+    cusine_numeric=cusine_encoded[cusine]
+
+    features=[week,center_id_input,meal_id_input,checkout_price,base_price,email_promotion,home_page,city_code,region_code,center_type_numeric,op_area,category_numeric,cusine_numeric]
+    
+    print(f"week:{week}\ncenter_id_input:{center_id_input}\ncheckout_price{checkout_price}\nbase_price:{base_price}\nemail_promotion{email_promotion},\nhome_page{home_page}")
+
+    # Submit button
+    if st.button("Submit"):
+
+        num_orders=predict_orders(features)
+        st.write(f"Number of orders: {num_orders}")
+        print(f'orders{num_orders}')
+
+        
