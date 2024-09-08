@@ -6,7 +6,8 @@ import joblib
 from tensorflow.keras.models import load_model
 import json
 import streamlit.components.v1 as components
-
+import diet_recomentation
+from diet_recomentation import calculate_nutritional_needs
 
 
 model=joblib.load('Model/lstmhyperparameter.pkl')
@@ -436,8 +437,35 @@ if st.session_state.interface == 'User':
     st.sidebar.title("User Options")
     # User-specific content
     st.write("Welcome to the User Interface!")
-    # Add your user interface code here
+    st.title("Personalized Diet Recommendation")
 
+    age = st.number_input("Enter your age", min_value=10, max_value=100, value=30)
+    gender = st.selectbox("Select your gender", ["male", "female"])
+    height = st.number_input("Enter your height (cm)", min_value=100, max_value=250, value=170)
+    weight = st.number_input("Enter your weight (kg)", min_value=30, max_value=200, value=70)
+    activity_level = st.selectbox("Select your activity level", ["Sedentary", "Light", "Moderate", "Active", "Very Active"])
+    goal = st.selectbox("Select your goal", ["Maintain Weight", "Weight Loss", "Muscle Gain"])
+
+    if st.button("Get Nutritional Recommendations"):
+        nutritional_needs = calculate_nutritional_needs(weight, height, age, gender, activity_level, goal)
+    
+        st.subheader("Your Daily Nutritional Needs:")
+        st.write(f"**Calories**: {nutritional_needs['calories']} kcal")
+        st.write(f"**Fat**: {nutritional_needs['fat (grams)']} grams")
+        st.write(f"**SaturatedFatContent**: {nutritional_needs['sat_fat_grams']} grams")
+        st.write(f"**Cholesterol**: {nutritional_needs['Cholesterol']} milligrams")
+        st.write(f"**Sodium**: {nutritional_needs['Sodium']} milligrams")
+        st.write(f"**Carbohydrates**: {nutritional_needs['carbohydrates (grams)']} grams")
+        st.write(f"**fiber **: {nutritional_needs['fiber (grams)']} grams")
+        st.write(f"**sugar**: {nutritional_needs['sugar (grams)']} grams")
+        st.write(f"**Protein**: {nutritional_needs['protein (grams)']} grams")
+
+    # Recommend foods
+    # recommendations = recommend_foods(calories, protein, fat, carbs)
+    # st.write("### Recommended Foods:")
+    # st.dataframe(recommendations)
+
+    
 elif st.session_state.interface == 'Client':
     st.title("Food Forecasting System - Client Interface")
     st.sidebar.title("Client Options")
