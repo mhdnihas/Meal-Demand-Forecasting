@@ -1,3 +1,29 @@
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import NearestNeighbors
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import FunctionTransformer
+import pandas as pd
+import numpy as np
+
+
+
+dataset=pd.read_csv('DATA/recipes.csv')
+columns=['Name','RecipeIngredientParts','Calories','FatContent','SaturatedFatContent','CholesterolContent','SodiumContent','CarbohydrateContent','FiberContent','SugarContent','ProteinContent']
+dataset=dataset[columns].sample(n=6000, random_state=42)
+print(dataset.head(5))
+
+# maximum values of nutritions
+max_Calories=35000
+max_daily_fat=130
+max_daily_Saturatedfat=40
+max_daily_Cholesterol=350
+max_daily_Sodium=2500
+max_daily_Carbohydrate=550
+max_daily_Fiber=100
+max_daily_Sugar=80
+max_daily_Protein=150
+max_list=[max_Calories,max_daily_fat,max_daily_Saturatedfat,max_daily_Cholesterol,max_daily_Sodium,max_daily_Carbohydrate,max_daily_Fiber,max_daily_Sugar,max_daily_Protein]
+
 def calculate_fiber(age, gender):
     
     if gender == 'male':
@@ -84,9 +110,7 @@ def calculate_nutritional_needs(weight, height, age, gender, activity_level, goa
 
 
     bmr = calculate_bmr(weight, height, age, gender )
-    print('haihai')
     tdee = calculate_tdee(bmr, activity_level)
-
     daily_calories = calculate_calories(tdee, goal)
 
     protein_grams = calculate_protein_needs(weight, activity_level, goal)
@@ -117,7 +141,58 @@ def calculate_nutritional_needs(weight, height, age, gender, activity_level, goa
         'sugar (grams)':sugar_grams,
         'protein (grams)': protein_grams,
 
-    }
+    },[daily_calories,fat_grams,sat_fat_grams,Cholesterol,Sodium,carb_grams,fiber_grams,sugar_grams,protein_grams]
+
+
+def scaling(dataframe):
+    scaler=StandardScaler()
+    print(dataframe.iloc[:,2:])
+    prep_data=scaler.fit_transform(dataframe.iloc[:,2:].to_numpy())
+    return prep_data,scaler
+
+def nn_predictor(prep_data):
+    neigh = NearestNeighbors(metric='cosine',algorithm='brute')
+    neigh.fit(prep_data)
+    return neigh
+
+def build_pipeline(neigh,scaler,params):
+    print('neighors,neigh:',neigh.kneighbors)
+    transformer = FunctionTransformer(neigh.kneighbors,kw_args=params)
+    pipeline=Pipeline([('std_scaler',scaler),('NN',transformer)])
+    return pipeline
+
+def extract_data(dataframe,max_nutritional_values,ingredient_filter=None):
+    extracted_data=dataframe.copy()
+    for column,maximum in zip(extracted_data.columns[2:],max_nutritional_values):
+        extracted_data=extracted_data[extracted_data[column]<maximum]
+    if ingredient_filter!=None:
+        for ingredient in ingredient_filter:
+            extracted_data=extracted_data[extracted_data['RecipeIngredientParts'].str.contains(ingredient,regex=False)]
+    return extracted_data
+
+def apply_pipeline(pipeline,_input,extracted_data):
+    print('apply_pipeline:',extracted_data.iloc[pipeline.transform(_input)[0]])
+    return extracted_data.iloc[pipeline.transform(_input)[0]]
+
+def recommand(_input,ingredient_filter=None,params={'return_distance':False}):
+    extract_dataset=extract_data(dataset,max_nutritional_values=max_list)
+    prep_data,scaler=scaling(extract_dataset)
+    neigh=nn_predictor(prep_data)
+    print('neigh:',neigh)
+    pipeline=build_pipeline(neigh,scaler,params)
+    recoment=apply_pipeline(pipeline,_input,extract_dataset)
+    return recoment[['Name','RecipeIngredientParts','Calories', 'FatContent', 'SaturatedFatContent',
+                     'CholesterolContent', 'SodiumContent', 'CarbohydrateContent',
+                     'FiberContent', 'SugarContent', 'ProteinContent']]
+
+
+
+
+
+
+
+
+
 
 weight = 80  
 height = 180  
@@ -126,7 +201,7 @@ gender = 'male'
 activity_level = 'moderate' 
 goal = 'muscle_gain'  
 
-nutritional_needs = calculate_nutritional_needs(weight, height, age, gender, activity_level, goal)
+nutritional_needs,nutritions = calculate_nutritional_needs(weight, height, age, gender, activity_level, goal)
 print(nutritional_needs)
 print("Daily Nutritional Needs:")
 nutritions=[]

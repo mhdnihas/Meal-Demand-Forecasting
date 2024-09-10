@@ -7,11 +7,11 @@ from tensorflow.keras.models import load_model
 import json
 import streamlit.components.v1 as components
 import diet_recomentation
-from diet_recomentation import calculate_nutritional_needs
+from diet_recomentation import calculate_nutritional_needs,recommand
+import numpy as np
+import pandas as pd
 
-
-model=joblib.load('Model/lstmhyperparameter.pkl')
-
+        
 with open('Model/scaler_params.json', 'r') as file:
     scaler_params = json.load(file)
 
@@ -20,6 +20,7 @@ scaler_loaded.mean_ = np.array(scaler_params['mean'])
 scaler_loaded.var_ = np.array(scaler_params['var'])
 scaler_loaded.scale_ = np.sqrt(scaler_loaded.var_)
 
+model=joblib.load('Model/lstmhyperparameter.pkl')
 
 def predict_orders(features):
     input_data = np.array(features )
@@ -400,7 +401,6 @@ center_data={10: {'center_type': ['TYPE_B'],
   'op_area': [3.4]}}
 
 
-# Initialize session state for meal_id, category, and cuisine if not already set
 if 'selected_meal_id' not in st.session_state:
     st.session_state.selected_meal_id = None
 
@@ -410,14 +410,12 @@ if 'selected_category' not in st.session_state:
 if 'selected_cuisine' not in st.session_state:
     st.session_state.selected_cuisine = None
 
-# Set default to user interface if not already set
 if 'interface' not in st.session_state:
     st.session_state.interface = 'User'
 
-# Create a horizontal layout for the buttons with equal width
 col1, col2, col3 = st.columns([1, 2, 1])
 
-with col2:  # Center the buttons
+with col2:  
     col2_1, col2_2 = st.columns([1, 1])
 
     with col2_1:
@@ -439,157 +437,239 @@ if st.session_state.interface == 'User':
     st.write("Welcome to the User Interface!")
     st.title("Personalized Diet Recommendation")
 
+
     age = st.number_input("Enter your age", min_value=10, max_value=100, value=30)
     gender = st.selectbox("Select your gender", ["male", "female"])
     height = st.number_input("Enter your height (cm)", min_value=100, max_value=250, value=170)
     weight = st.number_input("Enter your weight (kg)", min_value=30, max_value=200, value=70)
     activity_level = st.selectbox("Select your activity level", ["Sedentary", "Light", "Moderate", "Active", "Very Active"])
-    goal = st.selectbox("Select your goal", ["Maintain Weight", "Weight Loss", "Muscle Gain"])
-
-    if st.button("Get Nutritional Recommendations"):
-        nutritional_needs = calculate_nutritional_needs(weight, height, age, gender, activity_level, goal)
+    goal = st.selectbox("Select your goal", ["weight_gain", "weight_loss", "muscle_gain"])
     
-        st.subheader("Your Daily Nutritional Needs:")
-        st.write(f"**Calories**: {nutritional_needs['calories']} kcal")
-        st.write(f"**Fat**: {nutritional_needs['fat (grams)']} grams")
-        st.write(f"**SaturatedFatContent**: {nutritional_needs['sat_fat_grams']} grams")
-        st.write(f"**Cholesterol**: {nutritional_needs['Cholesterol']} milligrams")
-        st.write(f"**Sodium**: {nutritional_needs['Sodium']} milligrams")
-        st.write(f"**Carbohydrates**: {nutritional_needs['carbohydrates (grams)']} grams")
-        st.write(f"**fiber **: {nutritional_needs['fiber (grams)']} grams")
-        st.write(f"**sugar**: {nutritional_needs['sugar (grams)']} grams")
-        st.write(f"**Protein**: {nutritional_needs['protein (grams)']} grams")
 
-    # Recommend foods
-    # recommendations = recommend_foods(calories, protein, fat, carbs)
-    # st.write("### Recommended Foods:")
-    # st.dataframe(recommendations)
+    max_values = {
+    'calories': 3000,  
+    'carbohydrates (grams)': 550,  
+    'protein (grams)': 150,  
+    'fiber (grams)': 100,  
+    'fat (grams)': 130,  
+    'sat_fat_grams': 40,  
+    'sugar (grams)': 80,  
+    'Sodium': 3500,  
+    'Cholesterol': 350,  
+    }
+    def get_progress_value(nutrient_value, max_value):
+        return min(nutrient_value / max_value, 1) 
+    
 
+    
+    if st.button("Get Nutritional Recommendations"):
+        nutritional_needs,nutritions = calculate_nutritional_needs(weight, height, age, gender, activity_level, goal)
+
+        st.subheader("Your Daily Nutritional Needs vs Maximum Recommended Nutrients:")
+
+    # Splitting the content into two columns for comparison
+        col1, col2 = st.columns(2)
+
+    # Column 1 - User's Daily Nutritional Needs
+        with col1:
+            st.metric(label="Calories", value=f"{nutritional_needs['calories']} kcal", delta="Daily Requirement")
+
+            st.write("🌾 **Carbohydrates**")
+            st.progress(get_progress_value(nutritional_needs['carbohydrates (grams)'], max_values['carbohydrates (grams)']))
+            st.write(f"{nutritional_needs['carbohydrates (grams)']}g / {max_values['carbohydrates (grams)']}g")
+
+            st.write("🥩 **Protein**")
+            st.progress(get_progress_value(nutritional_needs['protein (grams)'], max_values['protein (grams)']))
+            st.write(f"{nutritional_needs['protein (grams)']}g / {max_values['protein (grams)']}g")
+
+            st.write("🍞 **Fiber**")
+            st.progress(get_progress_value(nutritional_needs['fiber (grams)'], max_values['fiber (grams)']))
+            st.write(f"{nutritional_needs['fiber (grams)']}g / {max_values['fiber (grams)']}g")
+
+        with col2:
+            st.write("🍫 **Fat**")
+            st.progress(get_progress_value(nutritional_needs['fat (grams)'], max_values['fat (grams)']))
+            st.write(f"{nutritional_needs['fat (grams)']}g / {max_values['fat (grams)']}g")
+
+            st.write("🍟 **Saturated Fat**")
+            st.progress(get_progress_value(nutritional_needs['sat_fat_grams'], max_values['sat_fat_grams']))
+            st.write(f"{nutritional_needs['sat_fat_grams']}g / {max_values['sat_fat_grams']}g")
+
+            st.write("🍧 **Sugar**")
+            st.progress(get_progress_value(nutritional_needs['sugar (grams)'], max_values['sugar (grams)']))
+            st.write(f"{nutritional_needs['sugar (grams)']}g / {max_values['sugar (grams)']}g")
+
+        st.subheader("Additional Nutritional Information:")
+        col3, col4 = st.columns(2)
+        with col3:
+            st.write(f"🧂 **Sodium**: {nutritional_needs['Sodium']} mg / {max_values['Sodium']} mg")
+            st.progress(get_progress_value(nutritional_needs['Sodium'], max_values['Sodium']))
+
+        with col4:
+            st.write(f"🍳 **Cholesterol**: {nutritional_needs['Cholesterol']} mg / {max_values['Cholesterol']} mg")
+            st.progress(get_progress_value(nutritional_needs['Cholesterol'], max_values['Cholesterol']))
+
+    # Nutritional Notes Section
+        st.markdown("""
+    ### Nutritional Notes:
+    - 🟢 Keep an eye on your sugar and fat intake.
+    - 🔴 Limit sodium consumption to avoid health risks.
+            """)
+
+
+        # 'calories': daily_calories,
+        # 'fat (grams)': fat_grams,
+        # 'sat_fat_grams':sat_fat_grams,
+        # 'Cholesterol':Cholesterol,
+        # 'Sodium':Sodium,
+        # 'carbohydrates (grams)': carb_grams,
+        # 'fiber (grams)':fiber_grams,
+        # 'sugar (grams)':sugar_grams,
+        # 'protein (grams)': protein_grams,
+    # Highlight important notes
+ 
+        st.subheader("Recommended Foods Based on Your Nutritional Needs:")
+
+    # Assuming the `recommand` function returns a DataFrame with food recommendations
+        recommended_foods = recommand(np.array(nutritions).reshape(1,-1))
+        styled_table = recommended_foods.style.set_properties(**{
+    'background-color': '#f0f0f0',  # Light gray background for data cells
+    'border': '2px solid #bbbbbb',   # Light gray border for subtle separation
+    'color': '#333333',              # Dark gray text for data cells
+    'font-size': '18px',             # Standard font size
+    'text-align': 'center',
+    'padding': '10px'                # Padding for better spacing
+        }).set_table_attributes('style="border-collapse:collapse;width:100%; background: linear-gradient(90deg, #d3d3d3, #d3d3d3);"')  # Gradient background for a modern feel
+
+# Hide the index and set the column header styles
+        styled_table = styled_table.hide(axis='index').set_table_styles([
+        {'selector': 'th', 'props': [
+        ('background-color', '#f0f0f0'),  # Match header background with data cells for consistency
+        ('color', '#000000'),              # Set header text color to black for readability
+        ('font-size', '18px'),
+        ('text-align', 'center'),
+        ('padding', '10px')
+        ]}
+        ])
+
+# Render the styled table with HTML in Streamlit
+        st.write("Here are the foods recommended for you:")
+        st.write(styled_table.to_html(), unsafe_allow_html=True)
+    # You can add images or color codes to make the output more visually appealing
+        st.markdown("""
+        **🥗 Suggested Food**
+        - 📌 Calories, Protein, Fiber, etc. are matched with your goals!
+        """)
     
 elif st.session_state.interface == 'Client':
     st.title("Food Forecasting System - Client Interface")
     st.sidebar.title("Client Options")
 
-    # Embed Tableau Public dashboard
-    st.write("My Dashboard:")
+    # Dashboard Button and Display
+    if st.sidebar.button("View Dashboard"):
+        st.write("### Dashboard Overview")
+        components.html(
+        """
+        <div class='tableauPlaceholder' id='viz1725323125508' style='position: relative'>
+            <noscript><a href='#'>
+                <img alt='Dashboard 1' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17240849634860&#47;Dashboard1&#47;1_rss.png' style='border: none' />
+            </a></noscript>
+            <object class='tableauViz'  style='display:none;'>
+                <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+                <param name='embed_code_version' value='3' />
+                <param name='site_root' value='' />
+                <param name='name' value='Book1_17240849634860&#47;Dashboard1' />
+                <param name='tabs' value='no' />
+                <param name='toolbar' value='yes' />
+                <param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17240849634860&#47;Dashboard1&#47;1.png' />
+                <param name='animate_transition' value='yes' />
+                <param name='display_static_image' value='yes' />
+                <param name='display_spinner' value='yes' />
+                <param name='display_overlay' value='yes' />
+                <param name='display_count' value='yes' />
+                <param name='language' value='en-US' />
+            </object>
+        </div>
+        <script type='text/javascript'>
+            var divElement = document.getElementById('viz1725323125508');
+            var vizElement = divElement.getElementsByTagName('object')[0];
+            if (divElement.offsetWidth > 800) {
+                vizElement.style.width='1520px';
+                vizElement.style.minHeight='587px';
+                vizElement.style.maxHeight='887px';
+                vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+            } else if (divElement.offsetWidth > 500) {
+                vizElement.style.width='1520px';
+                vizElement.style.minHeight='587px';
+                vizElement.style.maxHeight='887px';
+                vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+            } else {
+                vizElement.style.width='100%';
+                vizElement.style.height='2127px';
+            }
+            var scriptElement = document.createElement('script');
+            scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+            vizElement.parentNode.insertBefore(scriptElement, vizElement);
+        </script>
+        """,
+        height=1000, width=1500  # Adjust this based on your needs
+        )
 
-
-  
-
-
-# Title for the Streamlit app
-    st.title("Multiple Fulm")
-
-# Embed the Tableau Public dashboard
-    components.html(
-    """
-    <div class='tableauPlaceholder' id='viz1725323125508' style='position: relative'>
-        <noscript><a href='#'>
-            <img alt='Dashboard 1 ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17240849634860&#47;Dashboard1&#47;1_rss.png' style='border: none' />
-        </a></noscript>
-        <object class='tableauViz'  style='display:none;'>
-            <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
-            <param name='embed_code_version' value='3' />
-            <param name='site_root' value='' />
-            <param name='name' value='Book1_17240849634860&#47;Dashboard1' />
-            <param name='tabs' value='no' />
-            <param name='toolbar' value='yes' />
-            <param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17240849634860&#47;Dashboard1&#47;1.png' />
-            <param name='animate_transition' value='yes' />
-            <param name='display_static_image' value='yes' />
-            <param name='display_spinner' value='yes' />
-            <param name='display_overlay' value='yes' />
-            <param name='display_count' value='yes' />
-            <param name='language' value='en-US' />
-        </object>
-    </div>
-    <script type='text/javascript'>
-        var divElement = document.getElementById('viz1725323125508');
-        var vizElement = divElement.getElementsByTagName('object')[0];
-        if (divElement.offsetWidth > 800) {
-            vizElement.style.width='1520px';
-            vizElement.style.minHeight='587px';
-            vizElement.style.maxHeight='887px';
-            vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
-        } else if (divElement.offsetWidth > 500) {
-            vizElement.style.width='1520px';
-            vizElement.style.minHeight='587px';
-            vizElement.style.maxHeight='887px';
-            vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
-        } else {
-            vizElement.style.width='100%';
-            vizElement.style.height='2127px';
-        }
-        var scriptElement = document.createElement('script');
-        scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
-        vizElement.parentNode.insertBefore(scriptElement, vizElement);
-    </script>
-    """,
-    height=1000,width=1500  # Adjust this based on your needs
-    )
-
-
-
+    # Input Section for Forecasting
+    st.write("### Predict Future Orders")
     st.write("Please input the required details:")
 
-    week = st.number_input("week", step=1, format="%d")+118
+    week = st.number_input("Week (next)", step=1, format="%d") + 118
 
-
-    # Dropdown list for center_id
+    # Dropdown for center_id
     center_id_input = st.selectbox("Select Center ID", options=list(center_data.keys()))
 
     # Automatically display corresponding op_area, center_type, and city_code
     if center_id_input:
-        op_area=center_data[center_id_input]['op_area'][0]
-        center_type=center_data[center_id_input]['center_type'][0]
-        city_code=center_data[center_id_input]['city_code'][0]
-        region_code=center_data[center_id_input]['region_code'][0]
+        op_area = center_data[center_id_input]['op_area'][0]
+        center_type = center_data[center_id_input]['center_type'][0]
+        city_code = center_data[center_id_input]['city_code'][0]
+        region_code = center_data[center_id_input]['region_code'][0]
 
         st.write(f"Operational Area: {op_area}")
         st.write(f"Center Type: {center_type}")
         st.write(f"City Code: {city_code}")
         st.write(f"Region Code: {region_code}")
 
-    # Dropdown list for meal_id
+    # Dropdown for meal_id
     all_meal_ids = list(meal_data.keys())
     meal_id_input = st.selectbox("Select Meal ID", options=all_meal_ids)
 
     # Automatically set category and cuisine based on meal_id
     if meal_id_input:
-        category=meal_data[meal_id_input][0]
-        cusine=meal_data[meal_id_input][1]
+        category = meal_data[meal_id_input][0]
+        cusine = meal_data[meal_id_input][1]
         st.write(f"Category: {category}")
-        st.write(f"Cusine: {cusine}")
+        st.write(f"Cuisine: {cusine}")
 
-   
     # Additional inputs
     home_page = st.selectbox("Home Page Promotion", options=[0, 1])
     email_promotion = st.selectbox("Email Promotion", options=[0, 1])
     checkout_price = st.number_input("Checkout Price", min_value=0.0, max_value=1000.0, step=0.01)
     base_price = st.number_input("Base Price", min_value=0.0, max_value=1000.0, step=0.01)
-    
-    #st.write(f"Number of orders: {st.session_state.selected_meal_id}")
-    #week	center_id	meal_id	checkout_price	base_price	emailer_for_promotion	homepage_featured	city_code	region_code	center_type	op_area	category	cuisine
 
-    #label encoding 
-    center_type_encode={'TYPE_A': 0, 'TYPE_B': 1, 'TYPE_C': 2}
-    category_ended={'Beverages': 0, 'Biryani': 1, 'Desert': 2, 'Extras': 3, 'Fish': 4, 'Other Snacks': 5, 'Pasta': 6, 'Pizza': 7, 'Rice Bowl': 8, 'Salad': 9, 'Sandwich': 10, 'Seafood': 11, 'Soup': 12, 'Starters': 13}
-    cusine_encoded={'Continental': 0, 'Indian': 1, 'Italian': 2, 'Thai': 3}
+    # Label encoding
+    center_type_encode = {'TYPE_A': 0, 'TYPE_B': 1, 'TYPE_C': 2}
+    category_encoded = {'Beverages': 0, 'Biryani': 1, 'Desert': 2, 'Extras': 3, 'Fish': 4, 'Other Snacks': 5, 'Pasta': 6, 'Pizza': 7, 'Rice Bowl': 8, 'Salad': 9, 'Sandwich': 10, 'Seafood': 11, 'Soup': 12, 'Starters': 13}
+    cuisine_encoded = {'Continental': 0, 'Indian': 1, 'Italian': 2, 'Thai': 3}
 
-    center_type_numeric=center_type_encode[center_type]
-    category_numeric=category_ended[category]
-    cusine_numeric=cusine_encoded[cusine]
+    center_type_numeric = center_type_encode[center_type]
+    category_numeric = category_encoded[category]
+    cuisine_numeric = cuisine_encoded[cusine]
 
-    features=[week,center_id_input,meal_id_input,checkout_price,base_price,email_promotion,home_page,city_code,region_code,center_type_numeric,op_area,category_numeric,cusine_numeric]
-    
-    print(f"week:{week}\ncenter_id_input:{center_id_input}\ncheckout_price{checkout_price}\nbase_price:{base_price}\nemail_promotion{email_promotion},\nhome_page{home_page}")
+    # Features
+    features = [
+        week, center_id_input, meal_id_input, checkout_price, base_price,
+        email_promotion, home_page, city_code, region_code,
+        center_type_numeric, op_area, category_numeric, cuisine_numeric
+    ]
 
-    # Submit button
+    # Submit button to trigger prediction
     if st.button("Submit"):
-
-        num_orders=predict_orders(features)[0]
-        st.markdown(f"<h1 style='font-size:50px;'>Number of orders: {int(num_orders)}</h1>", unsafe_allow_html=True)
-
-        print(f'orders{num_orders}')
-
-        
+        num_orders = predict_orders(features)[0]
+        st.markdown(f"<h1 style='font-size:50px;'>Number of Orders: {int(num_orders)}</h1>", unsafe_allow_html=True)
