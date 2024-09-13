@@ -7,9 +7,9 @@ import numpy as np
 
 
 
-dataset=pd.read_csv('DATA/recipes.csv')
+dataset=pd.read_csv('DATA/recipes1.csv')
 columns=['Name','RecipeIngredientParts','Calories','FatContent','SaturatedFatContent','CholesterolContent','SodiumContent','CarbohydrateContent','FiberContent','SugarContent','ProteinContent']
-dataset=dataset[columns].sample(n=6000, random_state=42)
+dataset=dataset[columns]
 print(dataset.head(5))
 
 # maximum values of nutritions
