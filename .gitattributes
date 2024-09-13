@@ -1,3 +1,8 @@
 DATA/.ipynb_checkpoints/reviews-checkpoint.csv filter=lfs diff=lfs merge=lfs -text
 Model/gb_model.pkl filter=lfs diff=lfs merge=lfs -text
 [[:space:]]DATA/recipes.csv[[:space:]] filter=lfs diff=lfs merge=lfs -text
+.venv/lib/python3.10/site-packages/clang/native/libclang.so filter=lfs diff=lfs merge=lfs -text
+.venv/lib/python3.10/site-packages/pyarrow/libarrow.so.1700 filter=lfs diff=lfs merge=lfs -text
+Model/ModelInfo.csv filter=lfs diff=lfs merge=lfs -text
+.venv/lib/python3.10/site-packages/tensorflow/libtensorflow_framework.so.2 filter=lfs diff=lfs merge=lfs -text
+.venv/lib/python3.10/site-packages/tensorflow/libtensorflow_cc.so.2 filter=lfs diff=lfs merge=lfs -text
