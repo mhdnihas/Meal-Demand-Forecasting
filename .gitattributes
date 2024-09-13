@@ -6,3 +6,4 @@ Model/gb_model.pkl filter=lfs diff=lfs merge=lfs -text
 Model/ModelInfo.csv filter=lfs diff=lfs merge=lfs -text
 .venv/lib/python3.10/site-packages/tensorflow/libtensorflow_framework.so.2 filter=lfs diff=lfs merge=lfs -text
 .venv/lib/python3.10/site-packages/tensorflow/libtensorflow_cc.so.2 filter=lfs diff=lfs merge=lfs -text
+DATA/recipes.csv filter=lfs diff=lfs merge=lfs -text
