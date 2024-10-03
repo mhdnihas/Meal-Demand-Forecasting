@@ -1,2 +1,5 @@
-venv/
+.venv/
 DATA/
+*.csv
+*.pyc
+Model/rf_model.pkl

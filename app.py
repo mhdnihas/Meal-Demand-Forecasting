@@ -36,6 +36,132 @@ def predict_orders(features):
     
     return prediction
 
+
+
+import streamlit as st
+import streamlit.components.v1 as components
+
+import streamlit as st
+import streamlit.components.v1 as components
+
+def render_dashboard():
+    st.write("## Dashboard Overview")
+    st.write("""
+    Here you can view detailed insights into your restaurant's performance 
+    across different locations and meal categories, including historical 
+    order data, trends, and other key metrics.
+    """)
+
+    query_params = st.query_params
+
+    components.html(
+        """
+        <div class='tableauPlaceholder' id='viz1725323125508' style='position: relative'>
+            <noscript><a href='#'>
+                <img alt='Dashboard' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17240849634860&#47;Dashboard1&#47;1_rss.png' style='border: none'/>
+            </a></noscript>
+            <object class='tableauViz' style='display:none;'>
+                <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F'/>
+                <param name='embed_code_version' value='3'/>
+                <param name='name' value='Book1_17240849634860&#47;Dashboard1'/>
+                <param name='tabs' value='no'/>
+                <param name='toolbar' value='yes'/>
+                <param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17240849634860&#47;Dashboard1&#47;1.png'/>
+                <param name='animate_transition' value='yes'/>
+                <param name='display_static_image' value='yes'/>
+                <param name='display_spinner' value='yes'/>
+                <param name='display_overlay' value='yes'/>
+                <param name='display_count' value='yes'/>
+                <param name='language' value='en-US'/>
+            </object>
+        </div>
+        <script type='text/javascript'>
+            var divElement = document.getElementById('viz1725323125508');
+            var vizElement = divElement.getElementsByTagName('object')[0];
+            vizElement.style.width = '100%';
+            vizElement.style.height = window.innerHeight + 'px';
+            var scriptElement = document.createElement('script');
+            scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+            vizElement.parentNode.insertBefore(scriptElement, vizElement);
+        </script>
+        """,
+        height=query_params.get('height', [600])[0],
+        width=query_params.get('width', [1200])[0]
+    )
+
+
+
+
+
+
+def render_prediction_interface(center_data, meal_data, predict_orders):
+    st.write("## Predict Future Orders")
+    st.write("Please input the required details for meal demand forecasting:")
+
+    # Week Input
+    week = st.number_input("Select the Week", step=1, min_value=1, max_value=28) + 117
+
+    # Center ID and Meal ID Selection
+    center_id_input = st.selectbox("Select Center ID", options=list(center_data.keys()))
+    if center_id_input:
+        center_details = center_data[center_id_input]
+        op_area, center_type, city_code, region_code = center_details['op_area'][0], center_details['center_type'][0], center_details['city_code'][0], center_details['region_code'][0]
+        
+        st.write(f"Operational Area: **{op_area}**")
+        st.write(f"Center Type: **{center_type}**")
+        st.write(f"City Code: **{city_code}**")
+        st.write(f"Region Code: **{region_code}**")
+
+    meal_id_input = st.selectbox("Select Meal ID", options=list(meal_data.keys()))
+    if meal_id_input:
+        category, cusine = meal_data[meal_id_input][0], meal_data[meal_id_input][1]
+        st.write(f"Category: **{category}**")
+        st.write(f"Cuisine: **{cusine}**")
+
+    # Promotion and Price Inputs
+    home_page = st.selectbox("Home Page Promotion", options=[0, 1])
+    email_promotion = st.selectbox("Email Promotion", options=[0, 1])
+    checkout_price = st.number_input("Checkout Price", min_value=0.0, max_value=1000.0, step=0.01)
+    base_price = st.number_input("Base Price", min_value=0.0, max_value=1000.0, step=0.01)
+
+    # Feature Encoding for Prediction
+    center_type_numeric = {'TYPE_A': 0, 'TYPE_B': 1, 'TYPE_C': 2}.get(center_type, 0)
+    category_numeric = {
+        'Beverages': 0, 'Biryani': 1, 'Desert': 2, 'Extras': 3, 'Fish': 4, 'Other Snacks': 5, 
+        'Pasta': 6, 'Pizza': 7, 'Rice Bowl': 8, 'Salad': 9, 'Sandwich': 10, 'Seafood': 11, 
+        'Soup': 12, 'Starters': 13
+    }.get(category, 0)
+    cuisine_numeric = {'Continental': 0, 'Indian': 1, 'Italian': 2, 'Thai': 3}.get(cusine, 0)
+
+    features = [
+        week, center_id_input, meal_id_input, checkout_price, base_price,
+        email_promotion, home_page, city_code, region_code,
+        center_type_numeric, op_area, category_numeric, cuisine_numeric
+    ]
+
+    # Submit and Predict
+    if st.button("Submit"):
+        num_orders = predict_orders(features)[0]
+        st.markdown(f"<h1 style='font-size:50px;'>Predicted Number of Orders: {int(num_orders)}</h1>", unsafe_allow_html=True)
+
+
+
+def client_interface(center_data, meal_data, predict_orders):
+    st.title("Food Forecasting System - Client Interface")
+    
+    # Sidebar for Navigation
+    st.sidebar.title("Client Options")
+    section = st.sidebar.radio("Select Section", options=["Prediction","Dashboard"])
+
+    # Section Routing
+    if section == "Dashboard":
+        render_dashboard()
+    elif section == "Prediction":
+        render_prediction_interface(center_data, meal_data, predict_orders)
+
+
+
+
 # Reverse the mapping to create a dictionary with meal_id as key and (category, cuisine) as value
 meal_data = {
     1062: ('Beverages', 'Italian'),
@@ -562,98 +688,4 @@ if st.session_state.interface == 'User':
         """)
     
 elif st.session_state.interface == 'Client':
-    st.title("Food Forecasting System - Client Interface")
-    
-    # Sidebar for Navigation
-    st.sidebar.title("Client Options")
-
-    # Dashboard Section
-    if st.sidebar.button("View Dashboard"):
-        st.write("## Dashboard Overview")
-        st.write("""
-        Here you can view detailed insights into your restaurant's performance 
-        across different locations and meal categories, including historical 
-        order data, trends, and other key metrics.
-        """)
-        components.html(
-            """
-            <div class='tableauPlaceholder' id='viz1725323125508' style='position: relative'>
-                <noscript><a href='#'>
-                    <img alt='Dashboard' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17240849634860&#47;Dashboard1&#47;1_rss.png' style='border: none'/>
-                </a></noscript>
-                <object class='tableauViz' style='display:none;'>
-                    <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F'/>
-                    <param name='embed_code_version' value='3'/>
-                    <param name='name' value='Book1_17240849634860&#47;Dashboard1'/>
-                    <param name='tabs' value='no'/>
-                    <param name='toolbar' value='yes'/>
-                    <param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Bo&#47;Book1_17240849634860&#47;Dashboard1&#47;1.png'/>
-                    <param name='animate_transition' value='yes'/>
-                    <param name='display_static_image' value='yes'/>
-                    <param name='display_spinner' value='yes'/>
-                    <param name='display_overlay' value='yes'/>
-                    <param name='display_count' value='yes'/>
-                    <param name='language' value='en-US'/>
-                </object>
-            </div>
-            <script type='text/javascript'>
-                var divElement = document.getElementById('viz1725323125508');
-                var vizElement = divElement.getElementsByTagName('object')[0];
-                vizElement.style.width = divElement.offsetWidth > 800 ? '1520px' : '100%';
-                vizElement.style.height = divElement.offsetWidth > 500 ? '587px' : '2127px';
-                var scriptElement = document.createElement('script');
-                scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
-                vizElement.parentNode.insertBefore(scriptElement, vizElement);
-            </script>
-            """, 
-            height=1300, width=1500
-        )
-
-    # Forecasting Section
-    st.write("## Predict Future Orders")
-    st.write("Please input the required details for meal demand forecasting:")
-
-    # Week Input
-    week = st.number_input("Select the Week", step=1, min_value=1, max_value=28) + 117
-
-    # Center ID and Meal ID Selection
-    center_id_input = st.selectbox("Select Center ID", options=list(center_data.keys()))
-    if center_id_input:
-        op_area = center_data[center_id_input]['op_area'][0]
-        center_type = center_data[center_id_input]['center_type'][0]
-        city_code = center_data[center_id_input]['city_code'][0]
-        region_code = center_data[center_id_input]['region_code'][0]
-
-        st.write(f"Operational Area: **{op_area}**")
-        st.write(f"Center Type: **{center_type}**")
-        st.write(f"City Code: **{city_code}**")
-        st.write(f"Region Code: **{region_code}**")
-
-    meal_id_input = st.selectbox("Select Meal ID", options=list(meal_data.keys()))
-    if meal_id_input:
-        category = meal_data[meal_id_input][0]
-        cusine = meal_data[meal_id_input][1]
-        st.write(f"Category: **{category}**")
-        st.write(f"Cuisine: **{cusine}**")
-
-    # Promotion and Price Inputs
-    home_page = st.selectbox("Home Page Promotion", options=[0, 1])
-    email_promotion = st.selectbox("Email Promotion", options=[0, 1])
-    checkout_price = st.number_input("Checkout Price", min_value=0.0, max_value=1000.0, step=0.01)
-    base_price = st.number_input("Base Price", min_value=0.0, max_value=1000.0, step=0.01)
-
-    # Feature Encoding for Prediction
-    center_type_numeric = {'TYPE_A': 0, 'TYPE_B': 1, 'TYPE_C': 2}[center_type]
-    category_numeric = {'Beverages': 0, 'Biryani': 1, 'Dessert': 2}[category]
-    cuisine_numeric = {'Continental': 0, 'Indian': 1, 'Italian': 2}[cusine]
-
-    features = [
-        week, center_id_input, meal_id_input, checkout_price, base_price,
-        email_promotion, home_page, city_code, region_code,
-        center_type_numeric, op_area, category_numeric, cuisine_numeric
-    ]
-
-    # Submit and Predict
-    if st.button("Submit"):
-        num_orders = predict_orders(features)[0]
-        st.markdown(f"<h1 style='font-size:50px;'>Predicted Number of Orders: {int(num_orders)}</h1>", unsafe_allow_html=True)
+    client_interface(center_data, meal_data, predict_orders)
